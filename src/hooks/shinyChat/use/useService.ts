@@ -1,6 +1,7 @@
 import React from 'react'
 import WebsocketHeartbeat from 'websocket-heartbeat-js'
 import { WS_URL } from '../context'
+import { createOnMessage } from '../utils/onMessage'
 import { usePartner } from './usePartner'
 import { useFriendList } from './useFriendList'
 import { useMessages } from './useMessages'
@@ -57,54 +58,22 @@ export function useService(token: string | null) {
         ws.send(generate({ token, operate: MessageOperateEnum.LOGIN }))
       }
 
-      ws.onmessage = (data) => {
-        const msg: MESSAGE_DATA = JSON.parse(data.data)
-
-        if (msg.type === MessageTypeEnum.RESPONSE)
-          return
-
-        const operate = msg.operate
-        ws.send(generate({ operate, type: MessageTypeEnum.ACK }))
-
-        if (msg.type === MessageTypeEnum.NOTIFY) {
-          if (msg.chatStatus !== partner.chatStatus)
-            partner.setChatStatus(msg.chatStatus)
-
-          if (msg.system) {
-            switch (msg.operate) {
-              case MessageOperateEnum.ENTER_SUCCESS:
-              case MessageOperateEnum.EXIT_SUCCESS:
-                // 检测 chatStatus 状态, 不需要处理 匹配和离开消息
-                break
-              case MessageOperateEnum.STATE:
-                // 连接成功后会检测一次
-                // shinyChat.onState?.(msg)
-                break
-              default:
-            }
-          }
-          else {
-            switch (operate) {
-              case MessageOperateEnum.OTHER_MESSAGE:
-              case MessageOperateEnum.SELF_MESSAGE:
-                addMessage(0, msg)
-                partner.setUnreadMessageCount(partner.unreadMessageCount + 1)
-                break
-              case MessageOperateEnum.SELF_PRIVATE_MESSAGE:
-              case MessageOperateEnum.OTHER_PRIVATE_MESSAGE:
-                addMessage(msg.roomId!, msg)
-                friendList.setUnreadMessageCount(msg.roomId!, 1, true)
-                break
-              // case MessageOperateEnum.FEEDBACK_MESSAGE:
-              //   // FEEDBACK_MESSAGE
-              //   break
-              case MessageOperateEnum.TYPING:
-                partner.setTyping(true)
-                break
-            }
-          }
-        }
-      }
+      ws.onmessage = createOnMessage({
+        ack: operate => ws.send(generate({ operate, type: MessageTypeEnum.ACK })),
+        onMessage(roomId, msg) {
+          addMessage(roomId, msg)
+          if (roomId === 0)
+            partner.setUnreadMessageCount(partner.unreadMessageCount + 1)
+          else
+            friendList.setUnreadMessageCount(msg.roomId!, 1, true)
+        },
+        onTyping() {
+          partner.setTyping(true)
+        },
+        onChangeChatStatus(newChatStatus) {
+          partner.setChatStatus(newChatStatus)
+        },
+      })
 
       wsRef.current = ws
     }

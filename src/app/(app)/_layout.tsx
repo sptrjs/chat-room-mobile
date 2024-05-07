@@ -12,6 +12,8 @@ export default function AppLayout() {
     return <Redirect href="/auth/" />
 
   return (
-    <Stack />
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    </Stack>
   )
 }

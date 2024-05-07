@@ -1,30 +1,13 @@
 import React from 'react'
-import * as Updates from 'expo-updates'
 import { router } from 'expo-router'
 import { useStorageState } from '../useStorageState'
 import { useOnlineCount } from './use/useOnlineCount'
 import { ShinyChatContext } from './context'
 import { useService } from './use/useService'
 import { getMyProfile, login } from './apis'
-
-async function onFetchUpdateAsync() {
-  try {
-    const update = await Updates.checkForUpdateAsync()
-
-    if (update.isAvailable) {
-      await Updates.fetchUpdateAsync()
-      await Updates.reloadAsync()
-    }
-  }
-  catch (error) {
-    // You can also add an alert() to see the error message in case of an error when fetching updates.
-    // console.error(`Error fetching latest Expo update: ${error}`)
-  }
-}
+import { onFetchUpdateAsync } from '@/src/utiils/update'
 
 export function ShinyChatProvider(props: React.PropsWithChildren) {
-  // const appCurrentState = React.useRef(AppState.currentState)
-  // const isAppStateActive = React.useMemo(() => appCurrentState.current === 'active', [appCurrentState])
   const [[isLoading, token], setToken] = useStorageState('token')
   const service = useService(token)
   const { onlineCount } = useOnlineCount()
