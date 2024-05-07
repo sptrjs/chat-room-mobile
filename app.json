@@ -31,7 +31,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "package": "com.marik6988.shinychatmobile"
     },
     "web": {
       "bundler": "metro",
